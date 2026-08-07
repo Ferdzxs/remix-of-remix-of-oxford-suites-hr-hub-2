@@ -6,6 +6,7 @@ import {
   ChevronsUpDown,
   Copy,
   Facebook,
+  FilePlus2,
   Globe,
   GripVertical,
   Instagram,
@@ -16,6 +17,7 @@ import {
   Search,
   Send,
   Share2,
+  StickyNote,
   Trash2,
   X,
 } from "lucide-react";
@@ -37,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -55,6 +58,31 @@ import { departments, positions } from "@/data/hr";
 import { requisitionStore, useRequisitions } from "@/data/requisitions";
 import { useSort } from "@/components/portal/sortable";
 import { cn } from "@/lib/utils";
+
+function JustificationNote({
+  reqId,
+  justification,
+}: {
+  reqId: string;
+  justification: string;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5">
+          <StickyNote className="h-3.5 w-3.5" />
+          Note
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 text-sm" align="start">
+        <p className="mb-1 font-medium text-foreground">
+          Justification from Core HCM ({reqId})
+        </p>
+        <p className="italic text-muted-foreground">“{justification}”</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const templates = [
   {
