@@ -1647,36 +1647,48 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   ];
                   const done = steps.filter((s) => s.done).length;
                   return (
-                    <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-2.5">
-                      <div className="flex items-center justify-between text-[0.7rem] font-medium text-muted-foreground">
-                        <span>Booking progress</span>
-                        <span>
-                          {done} of {steps.length} complete
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-4 gap-2">
+                    <div className="mt-4 rounded-xl border border-border/70 bg-muted/20 px-3 py-3">
+                      <div className="flex items-center">
                         {steps.map((s, idx) => (
-                          <div key={s.label} className="min-w-0">
-                            <div
-                              className={cn(
-                                "h-1.5 rounded-full transition-colors duration-300",
-                                s.done ? "bg-primary" : "bg-border",
-                              )}
-                            />
-                            <p
-                              className={cn(
-                                "mt-1.5 truncate text-[0.7rem] transition-colors",
-                                s.done ? "font-medium text-primary" : "text-muted-foreground",
-                              )}
-                            >
-                              {idx + 1}. {s.label}
-                            </p>
+                          <div key={s.label} className="flex min-w-0 flex-1 items-center last:flex-none">
+                            <div className="flex min-w-0 flex-col items-center gap-1">
+                              <span
+                                className={cn(
+                                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[0.7rem] font-semibold transition-colors",
+                                  s.done
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-card text-muted-foreground",
+                                )}
+                              >
+                                {s.done ? <Check className="h-3.5 w-3.5" /> : idx + 1}
+                              </span>
+                              <span
+                                className={cn(
+                                  "truncate text-[0.7rem]",
+                                  s.done ? "font-medium text-primary" : "text-muted-foreground",
+                                )}
+                              >
+                                {s.label}
+                              </span>
+                            </div>
+                            {idx < steps.length - 1 && (
+                              <div
+                                className={cn(
+                                  "mx-1.5 -mt-4 h-0.5 flex-1 rounded-full transition-colors",
+                                  steps[idx + 1]!.done || s.done ? "bg-primary/60" : "bg-border",
+                                )}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
+                      <p className="mt-2 text-center text-[0.7rem] text-muted-foreground">
+                        {done} of {steps.length} steps complete
+                      </p>
                     </div>
                   );
                 })()}
+
 
                 <div className="mt-4 flex-1 space-y-4">
                   <Dialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
