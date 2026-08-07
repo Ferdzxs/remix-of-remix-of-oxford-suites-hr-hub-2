@@ -1149,25 +1149,35 @@ export function RecruitmentManagement({ role }: { role: "superadmin" | "admin" }
                 {visibleRequisitions.map((r) => (
                   <div
                     key={r.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3"
+                    className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border p-4"
                   >
-                    <div className="max-w-xl">
-                      <p className="flex items-center gap-2 text-sm font-medium">
-                        {r.position} <span className="text-muted-foreground">· {r.department}</span>
+                    <div className="max-w-2xl space-y-1.5">
+                      <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                        {r.position}
+                        <span className="font-normal text-muted-foreground">· {r.department}</span>
                         {isNewRequisition(r.requestedAt) && (
                           <Badge className="bg-primary text-primary-foreground">New</Badge>
                         )}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {r.count} opening(s) · {r.urgency} urgency · requested {r.requestedAt}
-                      </p>
-                      {r.justification && (
-                        <p className="mt-1.5 rounded-md bg-secondary/40 px-2 py-1.5 text-[0.7rem] italic text-muted-foreground">
-                          “{r.justification}”
-                        </p>
-                      )}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          <span className="text-foreground/70">Requested by:</span> {r.requestedBy ?? "—"}
+                        </span>
+                        <span>
+                          <span className="text-foreground/70">Requested on:</span> {r.requestedAt}
+                        </span>
+                        <span>
+                          <span className="text-foreground/70">Urgency:</span> {r.urgency}
+                        </span>
+                        <span>
+                          <span className="text-foreground/70">Openings:</span> {r.count}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {r.justification && (
+                        <JustificationNote reqId={r.id} justification={r.justification} />
+                      )}
                       <Badge
                         variant="outline"
                         className={
@@ -1176,7 +1186,7 @@ export function RecruitmentManagement({ role }: { role: "superadmin" | "admin" }
                             : "border-warning/40 bg-warning/20 text-warning-foreground"
                         }
                       >
-                        {r.status}
+                        {r.status === "Approved" ? "Ready to post" : "Awaiting review"}
                       </Badge>
                       <Button size="sm" onClick={() => convertRequisition(r.id)}>
                         Convert to job post
