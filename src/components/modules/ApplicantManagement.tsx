@@ -1557,7 +1557,11 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   </span>
                 </div>
 
-                <div className="mt-4 flex min-h-0 flex-1 flex-col">
+                  </div>
+
+                  {/* Right pane — interviews on the selected day */}
+                  <div className="flex min-h-0 flex-col">
+
                   <div className="flex items-center gap-2">
                     <p className="font-display text-base font-semibold">
                       Interviews on{" "}
