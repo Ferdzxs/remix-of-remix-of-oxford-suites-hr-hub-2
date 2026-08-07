@@ -1889,42 +1889,33 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label className="text-sm">
-                        <span className="text-primary">3.</span> Select Time Slot
-                      </Label>
-                      <span className="text-[0.7rem] text-muted-foreground">
-                        {slotSettings.slotCount} slots · {slotSettings.capacityPerSlot} applicants
-                        each
-                        {slotSettings.allowWalkIn ? " · walk-in allowed" : ""}
-                      </span>
-                    </div>
-                    <div className="flex max-h-[168px] flex-wrap gap-2 overflow-y-auto rounded-lg border border-border/70 bg-muted/15 p-2">
-                      {slotsForSelected.map((t) => {
-                        const used = bookedInSlot(schedule.date, t);
-                        const full = used >= slotSettings.capacityPerSlot;
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            disabled={full}
-                            onClick={() => setSchedule((p) => ({ ...p, time: t }))}
-                            className={cn(
-                              "rounded-full border px-4 py-2 text-xs font-medium transition-colors",
-                              full && "cursor-not-allowed opacity-40 line-through",
-                              schedule.time === t && !full
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50",
-                            )}
-                          >
-                            {t}
-                            <span className="ml-1 font-normal text-muted-foreground">
-                              ({slotSettings.capacityPerSlot - used} left)
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="text-sm">
+                      <span className="text-primary">3.</span> Select Interview Slot
+                    </Label>
+                    <Select
+                      value={schedule.time}
+                      onValueChange={(v) => setSchedule((p) => ({ ...p, time: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time slot" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {slotsForSelected.map((t) => {
+                          const used = bookedInSlot(schedule.date, t);
+                          const full = used >= slotSettings.capacityPerSlot;
+                          return (
+                            <SelectItem key={t} value={t} disabled={full}>
+                              {t} {full ? "— full" : `— ${slotSettings.capacityPerSlot - used} left`}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[0.7rem] text-muted-foreground">
+                      {slotsForSelected.length} slots available ·{" "}
+                      {slotSettings.capacityPerSlot} applicants per slot
+                      {slotSettings.allowWalkIn ? " · walk-in allowed" : ""}
+                    </p>
                     {slotSettings.allowWalkIn && (
                       <div className="mt-2 flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
                         <span className="text-xs">Walk-in applicant</span>
@@ -1935,6 +1926,7 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                       </div>
                     )}
                   </div>
+
 
                   <div className="space-y-2">
                     <div className="grid gap-4 sm:grid-cols-2">
