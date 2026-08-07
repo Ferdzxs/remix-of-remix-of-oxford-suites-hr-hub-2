@@ -1676,123 +1676,297 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                 })()}
 
                 <div className="mt-4 flex-1 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Slot settings
-                      </p>
-                      <p className="text-[0.7rem] text-muted-foreground">
-                        {slotSettings.slotCount} slots · {slotSettings.capacityPerSlot} applicants
-                        each · {slotSettings.intervalMinutes} min ·{" "}
-                        {slotSettings.allowWalkIn ? "walk-in allowed" : "no walk-ins"}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setSlotDialogOpen(true)}>
-                      Slot settings
-                    </Button>
-                  </div>
-
                   <Dialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
-                    <DialogContent className="sm:max-w-lg">
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
                       <DialogHeader>
-                        <DialogTitle className="font-display text-2xl">Slot settings</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2 font-display text-2xl">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Settings2 className="h-4 w-4" />
+                          </span>
+                          Slot Settings
+                        </DialogTitle>
                         <DialogDescription>
-                          Set how many time slots the day has, how many applicants each slot
-                          accepts, and whether walk-ins are allowed.
+                          Customize the interview schedule and availability.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Applicants per time slot</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={100}
-                              value={slotSettings.capacityPerSlot}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  capacityPerSlot: Math.max(1, Number(e.target.value) || 1),
-                                }))
-                              }
-                            />
+
+                      <div className="grid gap-5 lg:grid-cols-2">
+                        {/* Left — configuration */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Users className="h-4 w-4 text-muted-foreground" /> Capacity
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Applicants per slot</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  value={slotSettings.capacityPerSlot}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      capacityPerSlot: Math.max(1, Number(e.target.value) || 1),
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Number of time slots</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={48}
+                                  value={slotSettings.slotCount}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      slotCount: Math.min(
+                                        48,
+                                        Math.max(1, Number(e.target.value) || 1),
+                                      ),
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Number of time slots</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={48}
-                              value={slotSettings.slotCount}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  slotCount: Math.min(48, Math.max(1, Number(e.target.value) || 1)),
-                                }))
-                              }
-                            />
+
+                          <div className="space-y-2">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Clock className="h-4 w-4 text-muted-foreground" /> Time configuration
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">First slot starts</Label>
+                                <Input
+                                  type="time"
+                                  value={slotSettings.startTime}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      startTime: e.target.value || "08:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Slot duration</Label>
+                                <Select
+                                  value={String(slotSettings.intervalMinutes)}
+                                  onValueChange={(v) =>
+                                    setSlotSettings((p) => ({ ...p, intervalMinutes: Number(v) }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {[15, 20, 30, 45, 60].map((m) => (
+                                      <SelectItem key={m} value={String(m)}>
+                                        {m} minutes
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">First slot starts</Label>
-                            <Input
-                              type="time"
-                              value={slotSettings.startTime}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  startTime: e.target.value || "08:00",
-                                }))
-                              }
-                            />
+
+                          {/* Break slots */}
+                          <div className="space-y-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold">
+                                <Coffee className="h-4 w-4 text-primary" /> Break slots
+                              </p>
+                              <Switch
+                                checked={slotSettings.breakEnabled}
+                                onCheckedChange={(v) =>
+                                  setSlotSettings((p) => ({ ...p, breakEnabled: v }))
+                                }
+                              />
+                            </div>
+                            <p className="text-[0.7rem] text-muted-foreground">
+                              Enable break slot — those times stay unbookable.
+                            </p>
+                            <div className="flex items-end gap-2">
+                              <div className="flex-1 space-y-1">
+                                <Label className="text-xs">Start time</Label>
+                                <Input
+                                  type="time"
+                                  disabled={!slotSettings.breakEnabled}
+                                  value={slotSettings.breakStart}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      breakStart: e.target.value || "12:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <span className="pb-2.5 text-muted-foreground">–</span>
+                              <div className="flex-1 space-y-1">
+                                <Label className="text-xs">End time</Label>
+                                <Input
+                                  type="time"
+                                  disabled={!slotSettings.breakEnabled}
+                                  value={slotSettings.breakEnd}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      breakEnd: e.target.value || "13:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[0.7rem] text-muted-foreground">Quick set:</span>
+                              {[
+                                { label: "Lunch break", start: "12:00", end: "13:00" },
+                                { label: "15 min", start: slotSettings.breakStart, end: "" },
+                                { label: "30 min", start: slotSettings.breakStart, end: "" },
+                                { label: "1 hour", start: slotSettings.breakStart, end: "" },
+                              ].map((q, i) => (
+                                <button
+                                  key={q.label}
+                                  type="button"
+                                  disabled={!slotSettings.breakEnabled}
+                                  onClick={() =>
+                                    setSlotSettings((p) => {
+                                      if (i === 0) return { ...p, breakStart: "12:00", breakEnd: "13:00" };
+                                      const mins = i === 1 ? 15 : i === 2 ? 30 : 60;
+                                      const end = toMinutes(p.breakStart) + mins;
+                                      return {
+                                        ...p,
+                                        breakEnd: `${String(Math.floor(end / 60) % 24).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`,
+                                      };
+                                    })
+                                  }
+                                  className="rounded-full border border-border bg-card px-2.5 py-1 text-[0.7rem] transition-colors hover:border-primary/50 disabled:opacity-50"
+                                >
+                                  {q.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Slot length (minutes)</Label>
-                            <Select
-                              value={String(slotSettings.intervalMinutes)}
-                              onValueChange={(v) =>
-                                setSlotSettings((p) => ({ ...p, intervalMinutes: Number(v) }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[15, 20, 30, 45, 60].map((m) => (
-                                  <SelectItem key={m} value={String(m)}>
-                                    {m} min
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+
+                          <div className="space-y-3">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Settings2 className="h-4 w-4 text-muted-foreground" /> Other options
+                            </p>
+                            <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
+                              <div>
+                                <p className="text-xs font-medium">Walk-in applicants</p>
+                                <p className="text-[0.7rem] text-muted-foreground">
+                                  Allow applicants without a scheduled appointment.
+                                </p>
+                              </div>
+                              <Switch
+                                checked={slotSettings.allowWalkIn}
+                                onCheckedChange={(v) =>
+                                  setSlotSettings((p) => ({ ...p, allowWalkIn: v }))
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Default interview type</Label>
+                              <Select
+                                value={slotSettings.defaultMode}
+                                onValueChange={(v) =>
+                                  setSlotSettings((p) => ({
+                                    ...p,
+                                    defaultMode: v as "On-site" | "Virtual",
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="On-site">On-site</SelectItem>
+                                  <SelectItem value="Virtual">Virtual</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-                          <div>
-                            <p className="text-xs font-medium">Accept walk-in applicants</p>
-                            <p className="text-[0.7rem] text-muted-foreground">
-                              Allow booking walk-ins into these slots.
+
+                        {/* Right — live preview */}
+                        <div className="space-y-3 rounded-xl border border-border/70 bg-muted/15 p-3">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-semibold">Schedule preview</p>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-display text-base font-semibold">
+                              {slotPlan[0]?.label} –{" "}
+                              {slotPlan[slotPlan.length - 1]?.range.split(" — ")[1]}
+                            </p>
+                            <Badge variant="outline" className="border-primary/30 text-primary">
+                              {slotsForSelected.length} available slots
+                            </Badge>
+                          </div>
+                          <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border/70 bg-card p-1.5">
+                            {slotPlan.map((s) => (
+                              <div
+                                key={s.label}
+                                className={cn(
+                                  "flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs",
+                                  s.isBreak ? "bg-gold/15 text-foreground" : "bg-muted/30",
+                                )}
+                              >
+                                <span className="font-medium">{s.range}</span>
+                                <span
+                                  className={cn(
+                                    "text-[0.7rem] font-medium",
+                                    s.isBreak ? "text-gold-foreground" : "text-success",
+                                  )}
+                                >
+                                  {s.isBreak ? "Break" : "Available"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="space-y-1 rounded-lg border border-border/70 bg-card p-3 text-[0.7rem] text-muted-foreground">
+                            <p className="text-xs font-semibold text-foreground">Summary</p>
+                            <p>{slotsForSelected.length} time slots available</p>
+                            <p>{slotSettings.capacityPerSlot} applicants per slot</p>
+                            <p>{slotSettings.intervalMinutes} minutes duration</p>
+                            <p>
+                              {slotSettings.breakEnabled
+                                ? `Break: ${formatClock(toMinutes(slotSettings.breakStart))} – ${formatClock(toMinutes(slotSettings.breakEnd))}`
+                                : "No break slot"}
+                            </p>
+                            <p>
+                              {slotSettings.allowWalkIn ? "Walk-ins allowed" : "No walk-ins"} ·
+                              Default type: {slotSettings.defaultMode}
                             </p>
                           </div>
-                          <Switch
-                            checked={slotSettings.allowWalkIn}
-                            onCheckedChange={(v) =>
-                              setSlotSettings((p) => ({ ...p, allowWalkIn: v }))
-                            }
-                          />
                         </div>
                       </div>
+
                       <DialogFooter className="gap-2">
                         <Button
                           variant="outline"
                           onClick={() => setSlotSettings(DEFAULT_SLOT_SETTINGS)}
                         >
-                          Reset defaults
+                          Reset to default
                         </Button>
-                        <Button onClick={() => setSlotDialogOpen(false)}>Done</Button>
+                        <Button
+                          onClick={() => {
+                            setSlotDialogOpen(false);
+                            toast.success("Slot settings saved");
+                          }}
+                        >
+                          Save settings
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+
 
                   <div className="space-y-2">
                     <Label className="text-sm">Filter by Department</Label>
