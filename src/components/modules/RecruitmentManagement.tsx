@@ -1222,68 +1222,66 @@ export function RecruitmentManagement({ role }: { role: "superadmin" | "admin" }
                 setPendingPosition("");
                 setDeptDialogOpen(true);
               }}
-              className="flex min-h-[320px] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/20 p-10 text-center transition-colors hover:border-primary/60 hover:bg-primary/5"
+              className="flex min-h-[60vh] w-full flex-col min-h-[520px] items-center justify-center gap-5 rounded-xl border-2 border-dashed border-border bg-muted/20 p-10 text-center transition-colors hover:border-primary/60 hover:bg-primary/5"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-primary/50 text-primary">
-                <Plus className="h-5 w-5" />
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <FilePlus2 className="h-8 w-8" />
               </span>
-              <span className="font-display text-lg font-semibold">Create a job posting</span>
-              <span className="max-w-sm text-xs text-muted-foreground">
-                Click here to choose a department and job position, then build the posting.
+              <span className="font-display text-2xl font-semibold">Create a job posting</span>
+              <span className="max-w-md text-sm text-muted-foreground">
+                Click here to choose a department and job position, then build the posting from
+                scratch or start from a saved template.
               </span>
             </button>
           ) : (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <button
-                type="button"
-                onClick={() => {
-                  setBuilderStarted(false);
-                  setNewOpen(false);
-                  setDeptDialogOpen(false);
-                }}
-                className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
-              >
-                Create job post
-              </button>
-              <span>›</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingDept(draft.department || departments[0]!.name);
-                  setPendingPosition(draft.title);
-                  setDeptDialogOpen(true);
-                }}
-                className="underline-offset-4 hover:text-primary hover:underline"
-              >
-                {draft.department || "Department"}
-              </button>
-              <span>›</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingDept(draft.department || departments[0]!.name);
-                  setPendingPosition(draft.title);
-                  setDeptDialogOpen(true);
-                }}
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
-                {draft.title || "Untitled position"}
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBuilderStarted(false);
+                    setNewOpen(false);
+                    setDeptDialogOpen(false);
+                  }}
+                  className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                >
+                  Create job post
+                </button>
+                <span>›</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingDept(draft.department || departments[0]!.name);
+                    setPendingPosition(draft.title);
+                    setDeptDialogOpen(true);
+                  }}
+                  className="underline-offset-4 hover:text-primary hover:underline"
+                >
+                  {draft.department || "Department"}
+                </button>
+                <span>›</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingDept(draft.department || departments[0]!.name);
+                    setPendingPosition(draft.title);
+                    setDeptDialogOpen(true);
+                  }}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  {draft.title || "Untitled position"}
+                </button>
+              </div>
+              {sourceReqId &&
+                (() => {
+                  const sourceReq = requisitions.find((r) => r.id === sourceReqId);
+                  if (!sourceReq?.justification) return null;
+                  return (
+                    <JustificationNote reqId={sourceReq.id} justification={sourceReq.justification} />
+                  );
+                })()}
             </div>
-            {sourceReqId &&
-              (() => {
-                const sourceReq = requisitions.find((r) => r.id === sourceReqId);
-                if (!sourceReq?.justification) return null;
-                return (
-                  <div className="rounded-md border border-primary/20 bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-                    <p className="mb-0.5 font-medium text-foreground">
-                      Justification from Core HCM ({sourceReq.id})
-                    </p>
-                    <p className="italic">“{sourceReq.justification}”</p>
-                  </div>
-                );
-              })()}
             <div className="grid gap-4 xl:grid-cols-[190px_minmax(0,1fr)_360px]">
               {/* Component palette */}
               <Card className="border-border/70">

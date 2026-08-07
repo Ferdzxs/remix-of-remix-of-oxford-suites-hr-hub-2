@@ -298,21 +298,52 @@ const DEFAULT_SLOT_SETTINGS = {
   intervalMinutes: 30,
   allowWalkIn: true,
   defaultMode: "On-site" as "On-site" | "Virtual",
+  breakEnabled: true,
+  breakStart: "12:00",
+  breakEnd: "13:00",
+};
+
+type SlotSettings = typeof DEFAULT_SLOT_SETTINGS;
+
+const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+};
+
+const formatClock = (total: number) => {
+  const t = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hour24 = Math.floor(t / 60);
+  const minute = t % 60;
+  const suffix = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${suffix}`;
 };
 
 /** Builds the day's time slots from a start time, interval and slot count. */
 const buildTimeSlots = (startTime: string, intervalMinutes: number, count: number) => {
-  const [h, m] = startTime.split(":").map(Number);
-  const base = (h ?? 8) * 60 + (m ?? 0);
-  return Array.from({ length: Math.max(1, count) }, (_, i) => {
-    const total = (base + i * Math.max(5, intervalMinutes)) % (24 * 60);
-    const hour24 = Math.floor(total / 60);
-    const minute = total % 60;
-    const suffix = hour24 >= 12 ? "PM" : "AM";
-    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-    return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${suffix}`;
+  const base = toMinutes(startTime);
+  const step = Math.max(5, intervalMinutes);
+  return Array.from({ length: Math.max(1, count) }, (_, i) => formatClock(base + i * step));
+};
+
+/** Full slot plan for a day, marking slots that fall inside the break window. */
+const buildSlotPlan = (s: SlotSettings) => {
+  const base = toMinutes(s.startTime);
+  const step = Math.max(5, s.intervalMinutes);
+  const breakStart = toMinutes(s.breakStart);
+  const breakEnd = toMinutes(s.breakEnd);
+  return Array.from({ length: Math.max(1, s.slotCount) }, (_, i) => {
+    const start = base + i * step;
+    const end = start + step;
+    const isBreak = s.breakEnabled && start < breakEnd && end > breakStart;
+    return {
+      label: formatClock(start),
+      range: `${formatClock(start)} — ${formatClock(end)}`,
+      isBreak,
+    };
   });
 };
+
 
 /** Triggers a client-side download of generated text content. */
 const downloadTextFile = (filename: string, content: string) => {
