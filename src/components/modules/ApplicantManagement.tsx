@@ -1387,9 +1387,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
 
         {/* SCHEDULING */}
         <TabsContent value="scheduling" className="mt-4 space-y-6">
-          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+          <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
             {/* ── Interview Calendar ─────────────────────────────── */}
-            <Card className="flex flex-col rounded-xl border-border/70 shadow-sm">
+            <Card className="flex h-full flex-col rounded-xl border-border/70 shadow-sm">
               <CardContent className="flex flex-1 flex-col p-5">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                   <div className="flex min-w-0 items-start gap-3">
