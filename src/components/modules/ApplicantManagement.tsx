@@ -781,11 +781,13 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
     });
   }, [viewMonth]);
 
+  const slotPlan = useMemo(() => buildSlotPlan(slotSettings), [slotSettings]);
+
   const slotsForSelected = useMemo(
-    () =>
-      buildTimeSlots(slotSettings.startTime, slotSettings.intervalMinutes, slotSettings.slotCount),
-    [slotSettings.startTime, slotSettings.intervalMinutes, slotSettings.slotCount],
+    () => slotPlan.filter((s) => !s.isBreak).map((s) => s.label),
+    [slotPlan],
   );
+
 
   /** Interviews already booked for a given date + time slot. */
   const bookedInSlot = (date: string, time: string) =>
