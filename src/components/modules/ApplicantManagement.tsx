@@ -1847,13 +1847,13 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                     <Label className="text-sm">
                       <span className="text-primary">2.</span> Choose Date
                     </Label>
-                    <p className="text-xs font-medium text-muted-foreground">Suggested dates</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex snap-x gap-2 overflow-x-auto pb-1.5">
                       {suggestedSlots.map((s) => {
                         const active = schedule.date === s.date;
                         const booked = interviews.filter((i) => i.date === s.date).length;
                         const dayCapacity =
-                          slotSettings.slotCount * slotSettings.capacityPerSlot - booked;
+                          slotsForSelected.length * slotSettings.capacityPerSlot - booked;
+                        const d = new Date(`${s.date}T00:00:00`);
                         return (
                           <button
                             key={s.date}
@@ -1864,22 +1864,23 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                                 date: s.date,
                                 time: slotsForSelected[0]!,
                               }));
-                              const d = new Date(`${s.date}T00:00:00`);
                               setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1));
                             }}
                             className={cn(
-                              "rounded-full border px-4 py-2 text-xs font-medium transition-colors",
+                              "min-w-[8.5rem] shrink-0 snap-start rounded-xl border px-4 py-3 text-center transition-colors",
                               active
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-border hover:border-primary/50",
                             )}
                           >
-                            {new Date(`${s.date}T00:00:00`).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                            <span className="ml-1 font-normal text-muted-foreground">
+                            <span className="block text-sm font-semibold">
+                              {d.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span className="mt-0.5 block text-[0.7rem] text-muted-foreground">
                               ({dayCapacity} open)
                             </span>
                           </button>
@@ -1887,6 +1888,7 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                       })}
                     </div>
                   </div>
+
 
                   <div className="space-y-2">
                     <Label className="text-sm">
