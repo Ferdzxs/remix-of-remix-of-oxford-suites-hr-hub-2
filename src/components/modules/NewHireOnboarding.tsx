@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Eye, KeyRound, Pencil, Save, Search, UserPlus, Users, X } from "lucide-react";
+import { CheckCircle2, Circle, Eye, Pencil, Save, Search, UserPlus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/portal/PageHeader";
@@ -217,18 +217,9 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
     const next = stages[idx + 1]!;
     setEditingId(null);
     setEditSnapshot(null);
-    setHires((prev) =>
-      prev.map((h) =>
-        h.id === hire.id ? { ...h, stage: next, checklist: freshChecklist(next) } : h,
-      ),
-    );
-    setStage(next);
-    setShowAllStages(false);
-    setSelectedId(hire.id);
-    toast.success(`${hire.name} moved to ${next}`);
 
-    // The Add New Hire form only appears once a hire reaches Probationary,
-    // so their full record can be completed before the portal account is made.
+    // Advancing to Probationary opens the Add New Hire modal to complete the
+    // record first — the hire stays in Pre-onboarding until that's saved.
     if (next === "Probationary") {
       setForm({
         name: hire.name,
@@ -241,7 +232,18 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
       setNameLocked(true);
       setCompletingId(hire.id);
       setAddOpen(true);
+      return;
     }
+
+    setHires((prev) =>
+      prev.map((h) =>
+        h.id === hire.id ? { ...h, stage: next, checklist: freshChecklist(next) } : h,
+      ),
+    );
+    setStage(next);
+    setShowAllStages(false);
+    setSelectedId(hire.id);
+    toast.success(`${hire.name} moved to ${next}`);
   };
 
 
@@ -300,7 +302,8 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
       return;
     }
 
-    // Completing an existing hire's record as they enter probation.
+    // Completing an existing hire's record — this is when they actually move
+    // to Probationary and their portal account gets created.
     if (completingId) {
       const id = completingId;
       setHires((prev) =>
@@ -308,6 +311,8 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
           h.id === id
             ? {
                 ...h,
+                stage: "Probationary",
+                checklist: freshChecklist("Probationary"),
                 position: form.position,
                 department: form.department,
                 startDate: form.startDate,
@@ -317,9 +322,13 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
             : h,
         ),
       );
+      setAccounts((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      setStage("Probationary");
+      setShowAllStages(false);
       setSelectedId(id);
       resetHireForm();
-      toast.success(`${form.name}'s record completed for probation`);
+      toast.success(`${form.name} hired — portal account created`);
+      toast.success(`${form.name} moved to Probationary`);
       return;
     }
 
@@ -392,11 +401,7 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
               {stages.map((s, i) => {
                 const active = stages.indexOf(stage) >= i;
                 return (
-                  <button
-                    key={s}
-                    onClick={() => selectStage(s)}
-                    className="flex cursor-pointer flex-col items-center text-center"
-                  >
+                  <div key={s} className="flex flex-col items-center text-center">
                     <span
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-medium transition-colors",
@@ -422,7 +427,7 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
                     <Badge variant="secondary" className="mt-2">
                       {hires.filter((h) => h.stage === s).length} hires
                     </Badge>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -763,37 +768,7 @@ export function NewHireOnboarding({ role }: { role: "superadmin" | "admin" }) {
                   </div>
                 )}
 
-                {selected.stage === "Probationary" && (
-                  <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
-                    {accounts.includes(selected.id) ? (
-                      <span>
-                        Portal account created — default password{" "}
-                        <span className="font-medium text-foreground">
-                          {DEFAULT_ACCOUNT_PASSWORD}
-                        </span>
-                        .
-                      </span>
-                    ) : (
-                      <span>
-                        This hire is probationary — you can hire them and create their employee
-                        portal account.
-                      </span>
-                    )}
-                  </div>
-                )}
-
                 <div className="mt-auto flex flex-wrap items-stretch gap-2 pt-4">
-                  {selected.stage === "Probationary" && !accounts.includes(selected.id) && (
-                    <Button
-                      className="h-10 flex-1 cursor-pointer"
-                      onClick={() => {
-                        setAccounts((prev) => [...prev, selected.id]);
-                        toast.success(`${selected.name} hired — portal account created`);
-                      }}
-                    >
-                      <KeyRound className="mr-1.5 h-4 w-4" /> Hire &amp; create account
-                    </Button>
-                  )}
                   {editingId === selected.id ? (
                     <>
                       <Button

@@ -2,6 +2,11 @@ import { useMemo, useState } from "react";
 import {
   CalendarClock,
   CalendarDays,
+  Clock,
+  Check,
+  Coffee,
+
+
   ChevronLeft,
   ChevronDown,
   ChevronRight,
@@ -298,21 +303,52 @@ const DEFAULT_SLOT_SETTINGS = {
   intervalMinutes: 30,
   allowWalkIn: true,
   defaultMode: "On-site" as "On-site" | "Virtual",
+  breakEnabled: true,
+  breakStart: "12:00",
+  breakEnd: "13:00",
+};
+
+type SlotSettings = typeof DEFAULT_SLOT_SETTINGS;
+
+const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+};
+
+const formatClock = (total: number) => {
+  const t = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hour24 = Math.floor(t / 60);
+  const minute = t % 60;
+  const suffix = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${suffix}`;
 };
 
 /** Builds the day's time slots from a start time, interval and slot count. */
 const buildTimeSlots = (startTime: string, intervalMinutes: number, count: number) => {
-  const [h, m] = startTime.split(":").map(Number);
-  const base = (h ?? 8) * 60 + (m ?? 0);
-  return Array.from({ length: Math.max(1, count) }, (_, i) => {
-    const total = (base + i * Math.max(5, intervalMinutes)) % (24 * 60);
-    const hour24 = Math.floor(total / 60);
-    const minute = total % 60;
-    const suffix = hour24 >= 12 ? "PM" : "AM";
-    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-    return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${suffix}`;
+  const base = toMinutes(startTime);
+  const step = Math.max(5, intervalMinutes);
+  return Array.from({ length: Math.max(1, count) }, (_, i) => formatClock(base + i * step));
+};
+
+/** Full slot plan for a day, marking slots that fall inside the break window. */
+const buildSlotPlan = (s: SlotSettings) => {
+  const base = toMinutes(s.startTime);
+  const step = Math.max(5, s.intervalMinutes);
+  const breakStart = toMinutes(s.breakStart);
+  const breakEnd = toMinutes(s.breakEnd);
+  return Array.from({ length: Math.max(1, s.slotCount) }, (_, i) => {
+    const start = base + i * step;
+    const end = start + step;
+    const isBreak = s.breakEnabled && start < breakEnd && end > breakStart;
+    return {
+      label: formatClock(start),
+      range: `${formatClock(start)} — ${formatClock(end)}`,
+      isBreak,
+    };
   });
 };
+
 
 /** Triggers a client-side download of generated text content. */
 const downloadTextFile = (filename: string, content: string) => {
@@ -750,11 +786,13 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
     });
   }, [viewMonth]);
 
+  const slotPlan = useMemo(() => buildSlotPlan(slotSettings), [slotSettings]);
+
   const slotsForSelected = useMemo(
-    () =>
-      buildTimeSlots(slotSettings.startTime, slotSettings.intervalMinutes, slotSettings.slotCount),
-    [slotSettings.startTime, slotSettings.intervalMinutes, slotSettings.slotCount],
+    () => slotPlan.filter((s) => !s.isBreak).map((s) => s.label),
+    [slotPlan],
   );
+
 
   /** Interviews already booked for a given date + time slot. */
   const bookedInSlot = (date: string, time: string) =>
@@ -1349,9 +1387,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
 
         {/* SCHEDULING */}
         <TabsContent value="scheduling" className="mt-4 space-y-6">
-          <div className="grid items-start gap-6 xl:grid-cols-2">
+          <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
             {/* ── Interview Calendar ─────────────────────────────── */}
-            <Card className="flex flex-col rounded-xl border-border/70 shadow-sm">
+            <Card className="flex h-full flex-col rounded-xl border-border/70 shadow-sm">
               <CardContent className="flex flex-1 flex-col p-5">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                   <div className="flex min-w-0 items-start gap-3">
@@ -1366,6 +1404,15 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => setSlotDialogOpen(true)}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Slot settings</span>
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1400,6 +1447,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   </div>
                 </div>
 
+                <div className="mt-4 grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+                  {/* Left pane — month calendar */}
+                  <div className="flex min-w-0 flex-col">
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -1519,7 +1569,11 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   </span>
                 </div>
 
-                <div className="mt-4 flex min-h-0 flex-1 flex-col">
+                  </div>
+
+                  {/* Right pane — interviews on the selected day */}
+                  <div className="flex min-h-0 flex-col">
+
                   <div className="flex items-center gap-2">
                     <p className="font-display text-base font-semibold">
                       Interviews on{" "}
@@ -1583,7 +1637,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b-lg bg-gradient-to-t from-card to-transparent" />
                     )}
                   </div>
+                  </div>
                 </div>
+
               </CardContent>
             </Card>
 
@@ -1611,155 +1667,341 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   ];
                   const done = steps.filter((s) => s.done).length;
                   return (
-                    <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-2.5">
-                      <div className="flex items-center justify-between text-[0.7rem] font-medium text-muted-foreground">
-                        <span>Booking progress</span>
-                        <span>
-                          {done} of {steps.length} complete
-                        </span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-4 gap-2">
+                    <div className="mt-4 rounded-xl border border-border/70 bg-muted/20 px-3 py-3">
+                      <div className="flex items-center">
                         {steps.map((s, idx) => (
-                          <div key={s.label} className="min-w-0">
-                            <div
-                              className={cn(
-                                "h-1.5 rounded-full transition-colors duration-300",
-                                s.done ? "bg-primary" : "bg-border",
-                              )}
-                            />
-                            <p
-                              className={cn(
-                                "mt-1.5 truncate text-[0.7rem] transition-colors",
-                                s.done ? "font-medium text-primary" : "text-muted-foreground",
-                              )}
-                            >
-                              {idx + 1}. {s.label}
-                            </p>
+                          <div key={s.label} className="flex min-w-0 flex-1 items-center last:flex-none">
+                            <div className="flex min-w-0 flex-col items-center gap-1">
+                              <span
+                                className={cn(
+                                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[0.7rem] font-semibold transition-colors",
+                                  s.done
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-card text-muted-foreground",
+                                )}
+                              >
+                                {s.done ? <Check className="h-3.5 w-3.5" /> : idx + 1}
+                              </span>
+                              <span
+                                className={cn(
+                                  "truncate text-[0.7rem]",
+                                  s.done ? "font-medium text-primary" : "text-muted-foreground",
+                                )}
+                              >
+                                {s.label}
+                              </span>
+                            </div>
+                            {idx < steps.length - 1 && (
+                              <div
+                                className={cn(
+                                  "mx-1.5 -mt-4 h-0.5 flex-1 rounded-full transition-colors",
+                                  steps[idx + 1]!.done || s.done ? "bg-primary/60" : "bg-border",
+                                )}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
+                      <p className="mt-2 text-center text-[0.7rem] text-muted-foreground">
+                        {done} of {steps.length} steps complete
+                      </p>
                     </div>
                   );
                 })()}
 
-                <div className="mt-4 flex-1 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Slot settings
-                      </p>
-                      <p className="text-[0.7rem] text-muted-foreground">
-                        {slotSettings.slotCount} slots · {slotSettings.capacityPerSlot} applicants
-                        each · {slotSettings.intervalMinutes} min ·{" "}
-                        {slotSettings.allowWalkIn ? "walk-in allowed" : "no walk-ins"}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setSlotDialogOpen(true)}>
-                      Slot settings
-                    </Button>
-                  </div>
 
+                <div className="mt-4 flex-1 space-y-4">
                   <Dialog open={slotDialogOpen} onOpenChange={setSlotDialogOpen}>
-                    <DialogContent className="sm:max-w-lg">
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
                       <DialogHeader>
-                        <DialogTitle className="font-display text-2xl">Slot settings</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2 font-display text-2xl">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Settings2 className="h-4 w-4" />
+                          </span>
+                          Slot Settings
+                        </DialogTitle>
                         <DialogDescription>
-                          Set how many time slots the day has, how many applicants each slot
-                          accepts, and whether walk-ins are allowed.
+                          Customize the interview schedule and availability.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Applicants per time slot</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={100}
-                              value={slotSettings.capacityPerSlot}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  capacityPerSlot: Math.max(1, Number(e.target.value) || 1),
-                                }))
-                              }
-                            />
+
+                      <div className="grid gap-5 lg:grid-cols-2">
+                        {/* Left — configuration */}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Users className="h-4 w-4 text-muted-foreground" /> Capacity
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Applicants per slot</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  value={slotSettings.capacityPerSlot}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      capacityPerSlot: Math.max(1, Number(e.target.value) || 1),
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Number of time slots</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={48}
+                                  value={slotSettings.slotCount}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      slotCount: Math.min(
+                                        48,
+                                        Math.max(1, Number(e.target.value) || 1),
+                                      ),
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Number of time slots</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={48}
-                              value={slotSettings.slotCount}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  slotCount: Math.min(48, Math.max(1, Number(e.target.value) || 1)),
-                                }))
-                              }
-                            />
+
+                          <div className="space-y-2">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Clock className="h-4 w-4 text-muted-foreground" /> Time configuration
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">First slot starts</Label>
+                                <Input
+                                  type="time"
+                                  value={slotSettings.startTime}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      startTime: e.target.value || "08:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Slot duration</Label>
+                                <Select
+                                  value={String(slotSettings.intervalMinutes)}
+                                  onValueChange={(v) =>
+                                    setSlotSettings((p) => ({ ...p, intervalMinutes: Number(v) }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {[15, 20, 30, 45, 60].map((m) => (
+                                      <SelectItem key={m} value={String(m)}>
+                                        {m} minutes
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">First slot starts</Label>
-                            <Input
-                              type="time"
-                              value={slotSettings.startTime}
-                              onChange={(e) =>
-                                setSlotSettings((p) => ({
-                                  ...p,
-                                  startTime: e.target.value || "08:00",
-                                }))
-                              }
-                            />
+
+                          {/* Break slots */}
+                          <div className="space-y-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold">
+                                <Coffee className="h-4 w-4 text-primary" /> Break slots
+                              </p>
+                              <Switch
+                                checked={slotSettings.breakEnabled}
+                                onCheckedChange={(v) =>
+                                  setSlotSettings((p) => ({ ...p, breakEnabled: v }))
+                                }
+                              />
+                            </div>
+                            <p className="text-[0.7rem] text-muted-foreground">
+                              Enable break slot — those times stay unbookable.
+                            </p>
+                            <div className="flex items-end gap-2">
+                              <div className="flex-1 space-y-1">
+                                <Label className="text-xs">Start time</Label>
+                                <Input
+                                  type="time"
+                                  disabled={!slotSettings.breakEnabled}
+                                  value={slotSettings.breakStart}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      breakStart: e.target.value || "12:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <span className="pb-2.5 text-muted-foreground">–</span>
+                              <div className="flex-1 space-y-1">
+                                <Label className="text-xs">End time</Label>
+                                <Input
+                                  type="time"
+                                  disabled={!slotSettings.breakEnabled}
+                                  value={slotSettings.breakEnd}
+                                  onChange={(e) =>
+                                    setSlotSettings((p) => ({
+                                      ...p,
+                                      breakEnd: e.target.value || "13:00",
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[0.7rem] text-muted-foreground">Quick set:</span>
+                              {[
+                                { label: "Lunch break", start: "12:00", end: "13:00" },
+                                { label: "15 min", start: slotSettings.breakStart, end: "" },
+                                { label: "30 min", start: slotSettings.breakStart, end: "" },
+                                { label: "1 hour", start: slotSettings.breakStart, end: "" },
+                              ].map((q, i) => (
+                                <button
+                                  key={q.label}
+                                  type="button"
+                                  disabled={!slotSettings.breakEnabled}
+                                  onClick={() =>
+                                    setSlotSettings((p) => {
+                                      if (i === 0) return { ...p, breakStart: "12:00", breakEnd: "13:00" };
+                                      const mins = i === 1 ? 15 : i === 2 ? 30 : 60;
+                                      const end = toMinutes(p.breakStart) + mins;
+                                      return {
+                                        ...p,
+                                        breakEnd: `${String(Math.floor(end / 60) % 24).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`,
+                                      };
+                                    })
+                                  }
+                                  className="rounded-full border border-border bg-card px-2.5 py-1 text-[0.7rem] transition-colors hover:border-primary/50 disabled:opacity-50"
+                                >
+                                  {q.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Slot length (minutes)</Label>
-                            <Select
-                              value={String(slotSettings.intervalMinutes)}
-                              onValueChange={(v) =>
-                                setSlotSettings((p) => ({ ...p, intervalMinutes: Number(v) }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[15, 20, 30, 45, 60].map((m) => (
-                                  <SelectItem key={m} value={String(m)}>
-                                    {m} min
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+
+                          <div className="space-y-3">
+                            <p className="flex items-center gap-2 text-sm font-semibold">
+                              <Settings2 className="h-4 w-4 text-muted-foreground" /> Other options
+                            </p>
+                            <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
+                              <div>
+                                <p className="text-xs font-medium">Walk-in applicants</p>
+                                <p className="text-[0.7rem] text-muted-foreground">
+                                  Allow applicants without a scheduled appointment.
+                                </p>
+                              </div>
+                              <Switch
+                                checked={slotSettings.allowWalkIn}
+                                onCheckedChange={(v) =>
+                                  setSlotSettings((p) => ({ ...p, allowWalkIn: v }))
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Default interview type</Label>
+                              <Select
+                                value={slotSettings.defaultMode}
+                                onValueChange={(v) =>
+                                  setSlotSettings((p) => ({
+                                    ...p,
+                                    defaultMode: v as "On-site" | "Virtual",
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="On-site">On-site</SelectItem>
+                                  <SelectItem value="Virtual">Virtual</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-                          <div>
-                            <p className="text-xs font-medium">Accept walk-in applicants</p>
-                            <p className="text-[0.7rem] text-muted-foreground">
-                              Allow booking walk-ins into these slots.
+
+                        {/* Right — live preview */}
+                        <div className="space-y-3 rounded-xl border border-border/70 bg-muted/15 p-3">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-semibold">Schedule preview</p>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-display text-base font-semibold">
+                              {slotPlan[0]?.label} –{" "}
+                              {slotPlan[slotPlan.length - 1]?.range.split(" — ")[1]}
+                            </p>
+                            <Badge variant="outline" className="border-primary/30 text-primary">
+                              {slotsForSelected.length} available slots
+                            </Badge>
+                          </div>
+                          <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border/70 bg-card p-1.5">
+                            {slotPlan.map((s) => (
+                              <div
+                                key={s.label}
+                                className={cn(
+                                  "flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs",
+                                  s.isBreak ? "bg-gold/15 text-foreground" : "bg-muted/30",
+                                )}
+                              >
+                                <span className="font-medium">{s.range}</span>
+                                <span
+                                  className={cn(
+                                    "text-[0.7rem] font-medium",
+                                    s.isBreak ? "text-gold-foreground" : "text-success",
+                                  )}
+                                >
+                                  {s.isBreak ? "Break" : "Available"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="space-y-1 rounded-lg border border-border/70 bg-card p-3 text-[0.7rem] text-muted-foreground">
+                            <p className="text-xs font-semibold text-foreground">Summary</p>
+                            <p>{slotsForSelected.length} time slots available</p>
+                            <p>{slotSettings.capacityPerSlot} applicants per slot</p>
+                            <p>{slotSettings.intervalMinutes} minutes duration</p>
+                            <p>
+                              {slotSettings.breakEnabled
+                                ? `Break: ${formatClock(toMinutes(slotSettings.breakStart))} – ${formatClock(toMinutes(slotSettings.breakEnd))}`
+                                : "No break slot"}
+                            </p>
+                            <p>
+                              {slotSettings.allowWalkIn ? "Walk-ins allowed" : "No walk-ins"} ·
+                              Default type: {slotSettings.defaultMode}
                             </p>
                           </div>
-                          <Switch
-                            checked={slotSettings.allowWalkIn}
-                            onCheckedChange={(v) =>
-                              setSlotSettings((p) => ({ ...p, allowWalkIn: v }))
-                            }
-                          />
                         </div>
                       </div>
+
                       <DialogFooter className="gap-2">
                         <Button
                           variant="outline"
                           onClick={() => setSlotSettings(DEFAULT_SLOT_SETTINGS)}
                         >
-                          Reset defaults
+                          Reset to default
                         </Button>
-                        <Button onClick={() => setSlotDialogOpen(false)}>Done</Button>
+                        <Button
+                          onClick={() => {
+                            setSlotDialogOpen(false);
+                            toast.success("Slot settings saved");
+                          }}
+                        >
+                          Save settings
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+
 
                   <div className="space-y-2">
                     <Label className="text-sm">Filter by Department</Label>
@@ -1814,13 +2056,13 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                     <Label className="text-sm">
                       <span className="text-primary">2.</span> Choose Date
                     </Label>
-                    <p className="text-xs font-medium text-muted-foreground">Suggested dates</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex snap-x gap-2 overflow-x-auto pb-1.5">
                       {suggestedSlots.map((s) => {
                         const active = schedule.date === s.date;
                         const booked = interviews.filter((i) => i.date === s.date).length;
                         const dayCapacity =
-                          slotSettings.slotCount * slotSettings.capacityPerSlot - booked;
+                          slotsForSelected.length * slotSettings.capacityPerSlot - booked;
+                        const d = new Date(`${s.date}T00:00:00`);
                         return (
                           <button
                             key={s.date}
@@ -1831,22 +2073,23 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                                 date: s.date,
                                 time: slotsForSelected[0]!,
                               }));
-                              const d = new Date(`${s.date}T00:00:00`);
                               setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1));
                             }}
                             className={cn(
-                              "rounded-full border px-4 py-2 text-xs font-medium transition-colors",
+                              "min-w-[8.5rem] shrink-0 snap-start rounded-xl border px-4 py-3 text-center transition-colors",
                               active
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-border hover:border-primary/50",
                             )}
                           >
-                            {new Date(`${s.date}T00:00:00`).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                            <span className="ml-1 font-normal text-muted-foreground">
+                            <span className="block text-sm font-semibold">
+                              {d.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span className="mt-0.5 block text-[0.7rem] text-muted-foreground">
                               ({dayCapacity} open)
                             </span>
                           </button>
@@ -1855,43 +2098,35 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                     </div>
                   </div>
 
+
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Label className="text-sm">
-                        <span className="text-primary">3.</span> Select Time Slot
-                      </Label>
-                      <span className="text-[0.7rem] text-muted-foreground">
-                        {slotSettings.slotCount} slots · {slotSettings.capacityPerSlot} applicants
-                        each
-                        {slotSettings.allowWalkIn ? " · walk-in allowed" : ""}
-                      </span>
-                    </div>
-                    <div className="flex max-h-[168px] flex-wrap gap-2 overflow-y-auto rounded-lg border border-border/70 bg-muted/15 p-2">
-                      {slotsForSelected.map((t) => {
-                        const used = bookedInSlot(schedule.date, t);
-                        const full = used >= slotSettings.capacityPerSlot;
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            disabled={full}
-                            onClick={() => setSchedule((p) => ({ ...p, time: t }))}
-                            className={cn(
-                              "rounded-full border px-4 py-2 text-xs font-medium transition-colors",
-                              full && "cursor-not-allowed opacity-40 line-through",
-                              schedule.time === t && !full
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50",
-                            )}
-                          >
-                            {t}
-                            <span className="ml-1 font-normal text-muted-foreground">
-                              ({slotSettings.capacityPerSlot - used} left)
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="text-sm">
+                      <span className="text-primary">3.</span> Select Interview Slot
+                    </Label>
+                    <Select
+                      value={schedule.time}
+                      onValueChange={(v) => setSchedule((p) => ({ ...p, time: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time slot" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {slotsForSelected.map((t) => {
+                          const used = bookedInSlot(schedule.date, t);
+                          const full = used >= slotSettings.capacityPerSlot;
+                          return (
+                            <SelectItem key={t} value={t} disabled={full}>
+                              {t} {full ? "— full" : `— ${slotSettings.capacityPerSlot - used} left`}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[0.7rem] text-muted-foreground">
+                      {slotsForSelected.length} slots available ·{" "}
+                      {slotSettings.capacityPerSlot} applicants per slot
+                      {slotSettings.allowWalkIn ? " · walk-in allowed" : ""}
+                    </p>
                     {slotSettings.allowWalkIn && (
                       <div className="mt-2 flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2">
                         <span className="text-xs">Walk-in applicant</span>
@@ -1902,6 +2137,7 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                       </div>
                     )}
                   </div>
+
 
                   <div className="space-y-2">
                     <div className="grid gap-4 sm:grid-cols-2">

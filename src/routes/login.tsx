@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import loginHero from "@/assets/oxford-suite-makati-interior1.png";
+import loginHero from "@/assets/oxford-tower-wide.png";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -89,44 +89,64 @@ function LoginPage() {
         className="relative hidden overflow-hidden bg-primary text-primary-foreground lg:flex"
         style={{ padding: "clamp(1.75rem, 3.2vw, 3.5rem)" }}
       >
-        {/* The photo fills the panel at any viewport ratio */}
+        {/* Full-bleed property photo */}
         <img
           src={loginHero}
           alt="Oxford Suites Makati tower exterior under a bright sky"
           sizes="(min-width: 1024px) 55vw, 100vw"
-          className="absolute inset-0 h-full w-full object-cover object-top"
+          className="absolute inset-0 h-full w-full scale-105 object-cover object-center"
         />
-        <div aria-hidden className="absolute inset-0 bg-primary/60 mix-blend-multiply" />
-
-        {/* Readability scrims around the centered brand */}
+        {/* Burgundy duotone */}
+        <div aria-hidden className="absolute inset-0 bg-primary/70 mix-blend-multiply" />
+        <div aria-hidden className="absolute inset-0 bg-primary/15" />
+        {/* Bottom-up scrim for legibility */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-foreground/55 via-foreground/25 to-transparent"
+          className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/35 to-foreground/10"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_9rem_2rem_hsl(0_0%_0%/0.45)]"
+          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_10rem_2.5rem_hsl(0_0%_0%/0.45)]"
         />
 
         <div className="relative z-10 flex min-h-full w-full flex-1 flex-col">
-          <div className="flex flex-1 flex-col items-start justify-center py-10">
-            <Link to="/" className="block">
-              <Logo tone="invert" size="lg" />
-            </Link>
+          <Link to="/" className="block w-fit">
+            <Logo tone="invert" size="lg" />
+          </Link>
+
+          <div className="flex flex-1 flex-col justify-center py-12">
+            <p className="text-xs font-medium uppercase tracking-[0.28em] text-gold">
+              Oxford Suites Makati
+            </p>
+            <h1
+              className="mt-4 max-w-lg font-display font-semibold leading-[1.08]"
+              style={{ fontSize: "clamp(2.1rem, 3.4vw, 3.35rem)" }}
+            >
+              Where hospitality
+              <br />
+              meets precision.
+            </h1>
+            <div className="mt-6 h-px w-24 bg-gold" />
             <p
               className="mt-6 max-w-md text-primary-foreground/85"
-              style={{ fontSize: "clamp(0.85rem, 1.05vw, 1.05rem)" }}
+              style={{ fontSize: "clamp(0.9rem, 1.05vw, 1.05rem)" }}
             >
-              Hotel &amp; Restaurant Human Resource System
+              The hotel &amp; restaurant human resource system for our front office, housekeeping,
+              kitchen and service brigades — one portal for every post.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-primary-foreground/20 pt-5 text-xs text-primary-foreground/75">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-gold" />
-            Role-based access · +63 2 8888 8888
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-primary-foreground/20 pt-5 text-xs text-primary-foreground/75">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-gold" />
+              Role-based access
+            </span>
+            <span className="hidden h-3 w-px bg-primary-foreground/25 sm:block" />
+            <span>Front desk · +63 2 8888 8888</span>
           </div>
         </div>
       </div>
+
 
       {/* Credential panel */}
       <div className="flex items-center justify-center bg-background px-5 py-12 sm:px-10">
