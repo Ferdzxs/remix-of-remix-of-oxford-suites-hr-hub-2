@@ -1621,7 +1621,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b-lg bg-gradient-to-t from-card to-transparent" />
                     )}
                   </div>
+                  </div>
                 </div>
+
               </CardContent>
             </Card>
 
