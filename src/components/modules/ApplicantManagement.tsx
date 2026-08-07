@@ -1438,6 +1438,9 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                   </div>
                 </div>
 
+                <div className="mt-4 grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+                  {/* Left pane — month calendar */}
+                  <div className="flex min-w-0 flex-col">
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
