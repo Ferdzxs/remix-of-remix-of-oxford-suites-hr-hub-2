@@ -1161,9 +1161,6 @@ export function RecruitmentManagement({ role }: { role: "superadmin" | "admin" }
                       </p>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <span>
-                          <span className="text-foreground/70">Requested by:</span> {r.requestedBy ?? "—"}
-                        </span>
-                        <span>
                           <span className="text-foreground/70">Requested on:</span> {r.requestedAt}
                         </span>
                         <span>
