@@ -1407,6 +1407,15 @@ export function ApplicantManagement({ role }: { role: "superadmin" | "admin" }) 
                     <Button
                       size="sm"
                       variant="outline"
+                      className="gap-1.5"
+                      onClick={() => setSlotDialogOpen(true)}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Slot settings</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => {
                         const today = new Date("2026-08-03");
                         setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1));
