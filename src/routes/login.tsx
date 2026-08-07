@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import loginHero from "@/assets/oxford-suite-makati-interior1.png";
+import loginHero from "@/assets/oxford-tower-wide.png";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
